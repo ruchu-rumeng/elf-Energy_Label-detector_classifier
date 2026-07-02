@@ -29,24 +29,25 @@ sudo apt-get install libopencv-dev libmosquitto-dev qtbase5-dev
 ```
 
 ## 编译
-
+配置了一个简单的编译sh脚本clean_working.sh,包括:清除build的文件,重新make,运行
 ```bash
+mkdir -p build/
 qmake
-make
+cd ..
+chmod +x clean_working.sh
+./clean_working.sh
 ```
 
 ## 运行
-
+如果不想用clean_working.sh运行也可以单独运行
 ```bash
 ./hello -platform eglfs
 ```
 
 ## 配置
-
 修改 `widget.cpp` 和 `InferenceThread.cpp` 开头的宏定义：
-
 ```cpp
-#define MQTT_BROKER_HOST  "192.168.1.100"  // 上位机 IP
+#define MQTT_BROKER_HOST  "192.168.137.1"  // 上位机 IP
 #define MQTT_BROKER_PORT  1883
 #define MQTT_DEVICE_ID    "elf2-line01"    // 产线编号
 ```
