@@ -1,0 +1,11 @@
+[Unit]
+Description=Export GPIO 139 as Input for Label Defect Detector
+After=local-fs.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/gpioinit.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
