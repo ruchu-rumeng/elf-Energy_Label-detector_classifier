@@ -43,6 +43,38 @@ chmod +x clean_working.sh
 ./hello -platform eglfs
 ```
 
+## GPIO 自启动服务（可选）
+
+如果你使用 GPIO139 作为外部触发输入，建议配置 systemd 开机自启动服务，避免每次重启后手动 export GPIO：
+
+```bash
+# 1. 复制脚本和服务文件到系统目录
+sudo cp elf2端/gpio/gpioinit.sh /usr/local/bin/
+sudo chmod +x /usr/local/bin/gpioinit.sh
+sudo cp elf2端/gpio/gpio139.service /etc/systemd/system/
+
+# 2. 启用并启动服务
+sudo systemctl daemon-reload
+sudo systemctl enable gpio139.service
+sudo systemctl start gpio139.service
+
+# 3. 验证
+sudo systemctl status gpio139.service
+cat /sys/class/gpio/gpio139/direction   # 应输出 in
+```
+
+**文件说明：**
+
+| 文件 | 说明 |
+|------|------|
+| `elf2端/gpio/gpioinit.sh` | 安全导出 GPIO139 并设为输入；已导出则跳过；放宽权限便于程序访问 |
+| `elf2端/gpio/gpio139.service` | systemd oneshot 类型服务，开机自动执行脚本，不常驻内存 |
+
+**注意事项：**
+- GPIO139 对应 RK3588 的 GPIO4_B4（瑞芯微命名）
+- 脚本已做幂等处理：重复 `enable` 不会报错
+- `chmod 777` 是为了让非 root 用户运行的 Qt 程序也能读写 GPIO
+
 ## 配置
 修改 `widget.cpp` 和 `InferenceThread.cpp` 开头的宏定义：
 ```cpp
