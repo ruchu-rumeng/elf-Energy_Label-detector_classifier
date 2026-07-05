@@ -22,6 +22,13 @@ CameraThread::CameraThread(int cameraIndex, QObject *parent)
         cap.set(cv::CAP_PROP_FRAME_WIDTH, 640);
         cap.set(cv::CAP_PROP_FRAME_HEIGHT, 480);
         cap.set(cv::CAP_PROP_FPS, 30);
+
+        // 关闭自动曝光，防止运动拖影（V4L2: 0.25=手动模式）
+        cap.set(cv::CAP_PROP_AUTO_EXPOSURE, 0.25);
+        // 手动曝光值（范围因摄像头而异，需现场调试）：
+        // - 画面太暗 → 调大（如 -6）
+        // - 有拖影  → 调小（如 -10）
+        cap.set(cv::CAP_PROP_EXPOSURE, -8);
     }
 
     // ===== 摄像头标定参数（640x480 分辨率下标定） =====
@@ -66,7 +73,7 @@ void CameraThread::startCapture()
         } else {
             frame640 = origFrame;
         }
-        
+
         // 畸变矫正（用预计算的 map1/map2，比 undistort 快）
         cv::Mat undistorted;
         if (!map1.empty() && !map2.empty()) {

@@ -3,7 +3,7 @@
 #include "MqttClient.h"
 #include <QDateTime>
 #include <algorithm>
-
+#include <QDebug>
 // ===== MQTT 配置（部署时修改）=====
 #define MQTT_DEVICE_ID    "elf2-line01"    // 设备唯一标识（产线编号）
 
@@ -57,7 +57,7 @@ cv::Mat InferenceThread::letterbox(const cv::Mat &src, int targetSize,
     offsetX = (targetSize - newW) / 2;
 
     cv::Mat resized;
-    cv::resize(src, resized, cv::Size(newW, newH));
+    cv::resize(src, resized, cv::Size(newW, newH), 0, 0, cv::INTER_CUBIC);
 
     cv::Mat dst(targetSize, targetSize, CV_8UC3, cv::Scalar(0, 0, 0));
     resized.copyTo(dst(cv::Rect(offsetX, offsetY, newW, newH)));
@@ -69,8 +69,8 @@ std::vector<std::pair<cv::Rect, float>> InferenceThread::postProcess(const std::
                                                       int origW, int origH)
 {
     const int numAnchors = 8400;
-    const float confThreshold = 0.6f;
-    const float minBoxArea = 100.0f;
+    const float confThreshold = 0.25f;   // 对齐 OpenHarmony 版本
+    const float minBoxArea = 30.0f;      // 保留面积过滤，阈值调小
 
     struct Box { float x1, y1, x2, y2, conf; };
     std::vector<Box> candidates;
@@ -193,15 +193,54 @@ void InferenceThread::doInference()
     cv::Rect bestBox = boxes[0].first;
     float bestConf = boxes[0].second;
 
-    cv::Rect roi = bestBox & cv::Rect(0, 0, origFrame.cols, origFrame.rows);
-    if (roi.width <= 0 || roi.height <= 0) return;
+    // 以 bestBox 中心为基准，在原图上裁出 320×320，越界黑边填充，不 resize
+    float cx = bestBox.x + bestBox.width / 2.0f;
+    float cy = bestBox.y + bestBox.height / 2.0f;
+    int cropX = static_cast<int>(cx - 160);  // 320/2 = 160
+    int cropY = static_cast<int>(cy - 160);
+    const int CLS_SIZE = 320;
 
-    cv::Mat roiImg = origFrame(roi);
-    cv::Mat roiRgb;
-    cv::cvtColor(roiImg, roiRgb, cv::COLOR_BGR2RGB);
+    cv::Mat clsInput(CLS_SIZE, CLS_SIZE, CV_8UC3, cv::Scalar(0, 0, 0));  // RGB 黑底
 
-    cv::Mat clsInput;
-    cv::resize(roiRgb, clsInput, cv::Size(320, 320));
+    int srcX = std::max(0, cropX);
+    int srcY = std::max(0, cropY);
+    int srcX2 = std::min(origFrame.cols, cropX + CLS_SIZE);
+    int srcY2 = std::min(origFrame.rows, cropY + CLS_SIZE);
+    int srcW = srcX2 - srcX;
+    int srcH = srcY2 - srcY;
+
+    if (srcW > 0 && srcH > 0) {
+        cv::Mat srcRoi = origFrame(cv::Rect(srcX, srcY, srcW, srcH));
+        cv::Mat srcRgb;
+        cv::cvtColor(srcRoi, srcRgb, cv::COLOR_BGR2RGB);
+        int dstX = srcX - cropX;
+        int dstY = srcY - cropY;
+        srcRgb.copyTo(clsInput(cv::Rect(dstX, dstY, srcW, srcH)));
+    }
+
+    // ===== 图像增强：降噪 + 锐化，补偿采集模糊 =====
+    {
+        // 1. 轻度中值滤波降噪（3x3，去除椒盐噪点，保留边缘）
+        cv::Mat denoised;
+        cv::medianBlur(clsInput, denoised, 3);
+
+        // 2. Unsharp Mask 锐化：原图*1.5 - 高斯模糊*0.5
+        cv::Mat blurred;
+        cv::GaussianBlur(denoised, blurred, cv::Size(0, 0), 1.0);
+        cv::addWeighted(denoised, 1.5, blurred, -0.5, 0, clsInput);
+    }
+    // =====================================================
+
+    // ===== 调试：保存第二个模型的 320×320 输入图像 =====
+    {
+        cv::Mat debugImg;
+        cv::cvtColor(clsInput, debugImg, cv::COLOR_RGB2BGR);  // imwrite 需要 BGR
+        static int saveCnt = 0;
+        QString savePath = QString("/home/elf/qt_ws/hello/cls_input_%1.png").arg(saveCnt++, 4, 10, QChar('0'));
+        cv::imwrite(savePath.toStdString(), debugImg);
+        qDebug() << "[DEBUG] Classifier input saved to:" << savePath;
+    }
+    // =====================================================
 
     if (!classifier.inference(clsInput)) return;
 
