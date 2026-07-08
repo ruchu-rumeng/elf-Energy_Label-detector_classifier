@@ -46,7 +46,7 @@ chmod +x clean_working.sh
 
 ## GPIO 自启动服务（可选）
 
-如果你使用 GPIO139 作为外部触发输入，建议配置 systemd 开机自启动服务，避免每次重启后手动 export GPIO：
+如果你使用 GPIO139 作为外部触发输入，建议配置 systemd 开机自启动服务，避免每次重启后手动 export GPIO,GPIO116同理：
 
 ```bash
 # 1. 复制脚本和服务文件到系统目录
