@@ -69,8 +69,8 @@ std::vector<std::pair<cv::Rect, float>> InferenceThread::postProcess(const std::
                                                       int origW, int origH)
 {
     const int numAnchors = 8400;
-    const float confThreshold = 0.25f;   // 交接文件要求：conf >= 0.25   
-    const float minBoxArea = 30.0f;      // 面积过滤
+    const float confThreshold = 0.50f;      
+    const float minBoxArea = 35.0f;      // 面积过滤
 
     struct Box { float x1, y1, x2, y2, conf; };
     std::vector<Box> candidates;
