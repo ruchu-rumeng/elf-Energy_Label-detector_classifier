@@ -23,9 +23,6 @@
 | 报警 IO | GPIO3_C4(瑞芯微的命名格式,GPIO116) |
 | 网络 | 与 MQTT Broker 同局域网 |
 
-## 模型
-目前模型训练有关的脚本和数据集暂不开源，只提供冻结的onnx和适配RK3588的rknn模型,在models文件夹下
-
 ## PCB扩展板
 为光电传感器提供接口,搭建蜂鸣器报警电路,支持跳线帽通过是否启用反相器调整开关电平反相,在PCB文件夹下
 
@@ -96,6 +93,7 @@ cat /sys/class/gpio/gpio139/direction
 
 ## 模型
 
+目前模型训练有关的脚本和数据集暂不开源，只提供冻结的onnx和适配RK3588的rknn模型,在models文件夹下
 - `detector_best.rknn`：YOLOv8n 检测器，输入 640×640，输出 [1,5,8400]
 - `classifier_best.rknn`：MobileNetV3 分类器，输入 320×320，输出[1,5]和[1,4]
 
