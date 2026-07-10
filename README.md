@@ -204,6 +204,9 @@ python host_software/build.py
 
 详见 `host_software/embedded_changes.md` 和 `host_software/config/mqtt_topic_spec.md`
 
+### 模型
+目前模型训练有关的脚本和数据集暂不开源，只提供冻结的onnx和适配RK3588的rknn模型,在models文件夹下
+
 ## 许可证
 
 MIT License
