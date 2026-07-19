@@ -17,7 +17,7 @@
 | 项目 | 要求 |
 |------|------|
 | 开发板 | RK3588（ELF 2 开发板） |
-| 摄像头 | USB 摄像头（轮趣C70）或 MIPI-CSI（OV13855） |
+| 摄像头 | USB 摄像头 或 MIPI-CSI（OV13855） |
 | 光电传感器 | E18-D80NK2(淘宝链接:https://e.tb.cn/h.8a1amAZQdKzsUQI?tk=jShfgoBShh2 ) |
 | 触发 IO | GPIO4_B3(瑞芯微的命名格式,GPIO139) |
 | 报警 IO | GPIO3_C4(瑞芯微的命名格式,GPIO116) |
